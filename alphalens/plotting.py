@@ -29,7 +29,9 @@ from . import utils
 from . import performance as perf
 
 DECIMAL_TO_BPS = 10000
-
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
+sns.set(font='SimHei')
 
 def customize(func):
     """
