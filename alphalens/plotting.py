@@ -32,6 +32,7 @@ DECIMAL_TO_BPS = 10000
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 sns.set(font='SimHei')
+sns.set_style('whitegrid',{'font.sans-serif':['simhei','Arial']})
 
 def customize(func):
     """
