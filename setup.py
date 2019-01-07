@@ -10,7 +10,7 @@ if 'upload' in sys.argv:
         long_description = f.read()
 
 install_reqs = [
-    'matplotlib>=1.4.0',
+    'matplotlib>=3.0.2',
     'numpy>=1.9.1',
     'pandas>=0.18.0',
     'scipy>=0.14.0',

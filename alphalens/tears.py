@@ -251,10 +251,10 @@ def create_returns_tear_sheet(factor_data,
 
     for p in factor_returns:
 
-        title = ('Factor Weighted '
-                 + ('Group Neutral ' if group_neutral else '')
-                 + ('Long/Short ' if long_short else '')
-                 + "Portfolio Cumulative Return ({} Period)".format(p))
+        title = ('因子加权'
+                 + ('组中性' if group_neutral else '')
+                 + ('多头/空头 ' if long_short else '')
+                 + "投资组合累积收益率({}周期)".format(p))
 
         plotting.plot_cumulative_returns(factor_returns[p],
                                          period=p,
