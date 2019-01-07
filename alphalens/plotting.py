@@ -13,26 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import pandas as pd
-from scipy import stats
-import statsmodels.api as sm
-
-import seaborn as sns
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-
 from functools import wraps
 
-from . import utils
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import statsmodels.api as sm
+from matplotlib.ticker import ScalarFormatter
+from scipy import stats
+
 from . import performance as perf
+from . import utils
 
 DECIMAL_TO_BPS = 10000
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
-sns.set(font='SimHei')
-sns.set_style('whitegrid',{'font.sans-serif':['simhei','Arial']})
+
 
 def customize(func):
     """
@@ -125,7 +121,7 @@ def axes_style(style='darkgrid', rc=None):
     if rc is None:
         rc = {}
 
-    rc_default = {}
+    rc_default = {"font.sans-serif":['simhei', 'Arial']}
 
     # Add defaults if they do not exist
     for name, val in rc_default.items():
@@ -146,7 +142,7 @@ def plot_returns_table(alpha_beta,
     returns_table.loc["Mean Period Wise Spread (bps)"] = \
         mean_ret_spread_quantile.mean() * DECIMAL_TO_BPS
 
-    print("Returns Analysis")
+    print("收益率分析")
     utils.print_table(returns_table.apply(lambda x: x.round(3)))
 
 
@@ -161,7 +157,7 @@ def plot_turnover_table(autocorrelation_data, quantile_turnover):
         auto_corr.loc["Mean Factor Rank Autocorrelation",
                       "{}".format(period)] = p_data.mean()
 
-    print("Turnover Analysis")
+    print("换手率分析")
     utils.print_table(turnover_table.apply(lambda x: x.round(3)))
     utils.print_table(auto_corr.apply(lambda x: x.round(3)))
 
@@ -178,7 +174,7 @@ def plot_information_table(ic_data):
     ic_summary_table["IC Skew"] = stats.skew(ic_data)
     ic_summary_table["IC Kurtosis"] = stats.kurtosis(ic_data)
 
-    print("Information Analysis")
+    print("信息系数分析")
     utils.print_table(ic_summary_table.apply(lambda x: x.round(3)).T)
 
 
@@ -188,7 +184,7 @@ def plot_quantile_statistics_table(factor_data):
     quantile_stats['count %'] = quantile_stats['count'] \
         / quantile_stats['count'].sum() * 100.
 
-    print("Quantiles Statistics")
+    print("分位数统计")
     utils.print_table(quantile_stats)
 
 
@@ -277,7 +273,7 @@ def plot_ic_hist(ic, ax=None):
 
     for a, (period_num, ic) in zip(ax, ic.iteritems()):
         sns.distplot(ic.replace(np.nan, 0.), norm_hist=True, ax=a)
-        a.set(title="%s Period IC" % period_num, xlabel='IC')
+        a.set(title="%s周期IC" % period_num, xlabel='IC')
         a.set_xlim([-1, 1])
         a.text(.05, .95, "Mean %.3f \n Std. %.3f" % (ic.mean(), ic.std()),
                fontsize=16,
@@ -333,7 +329,7 @@ def plot_ic_qq(ic, theoretical_dist=stats.norm, ax=None):
     for a, (period_num, ic) in zip(ax, ic.iteritems()):
         sm.qqplot(ic.replace(np.nan, 0.).values, theoretical_dist, fit=True,
                   line='45', ax=a)
-        a.set(title="{} Period IC {} Dist. Q-Q".format(
+        a.set(title="{}周期IC {} 分布. Q-Q".format(
               period_num, dist_name),
               ylabel='Observed Quantile',
               xlabel='{} Distribution Quantile'.format(dist_name))
@@ -405,7 +401,7 @@ def plot_quantile_returns_bar(mean_ret_by_q,
 
         (mean_ret_by_q.multiply(DECIMAL_TO_BPS)
             .plot(kind='bar',
-                  title="Mean Period Wise Return By Factor Quantile", ax=ax))
+                  title="因子分位数的均值周期回报率", ax=ax))
         ax.set(xlabel='', ylabel='Mean Return (bps)',
                ylim=(ymin, ymax))
 
@@ -463,8 +459,8 @@ def plot_quantile_returns_violin(return_by_q,
                    cut=0,
                    inner='quartile',
                    ax=ax)
-    ax.set(xlabel='', ylabel='Return (bps)',
-           title="Period Wise Return By Factor Quantile",
+    ax.set(xlabel='', ylabel='收益率(bps)',
+           title="因子分位数分组周期收益率",
            ylim=(ymin, ymax))
 
     ax.axhline(0.0, linestyle='-', color='black', lw=0.7, alpha=0.6)
@@ -522,7 +518,7 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
         return ax
 
     periods = mean_returns_spread.name
-    title = ('Top Minus Bottom Quantile Mean Return ({} Period Forward Return)'
+    title = ('顶部减底部分位数平均收益率({}周期预期收益率)'
              .format(periods if periods is not None else ""))
 
     if ax is None:
@@ -579,7 +575,7 @@ def plot_ic_by_group(ic_group, ax=None):
         f, ax = plt.subplots(1, 1, figsize=(18, 6))
     ic_group.plot(kind='bar', ax=ax)
 
-    ax.set(title="Information Coefficient By Group", xlabel="")
+    ax.set(title="分组的信息系数", xlabel="")
     ax.set_xticklabels(ic_group.index, rotation=45)
 
     return ax
@@ -610,7 +606,7 @@ def plot_factor_rank_auto_correlation(factor_autocorrelation,
     if ax is None:
         f, ax = plt.subplots(1, 1, figsize=(18, 6))
 
-    factor_autocorrelation.plot(title='{} Period Factor Rank Autocorrelation'
+    factor_autocorrelation.plot(title='{}周期因子秩自相关'
                                 .format(period), ax=ax)
     ax.set(ylabel='Autocorrelation Coefficient', xlabel='')
     ax.axhline(0.0, linestyle='-', color='black', lw=1)
@@ -649,7 +645,7 @@ def plot_top_bottom_quantile_turnover(quantile_turnover, period=1, ax=None):
     turnover = pd.DataFrame()
     turnover['top quantile turnover'] = quantile_turnover[max_quantile]
     turnover['bottom quantile turnover'] = quantile_turnover[min_quantile]
-    turnover.plot(title='{} Period Top and Bottom Quantile Turnover'
+    turnover.plot(title='{}周期顶部和底部分位数周转率'
                   .format(period), ax=ax, alpha=0.6, lw=0.8)
     ax.set(ylabel='Proportion Of Names New To Quantile', xlabel="")
 
@@ -732,6 +728,7 @@ def plot_cumulative_returns(factor_returns, period, title=None, ax=None):
     ax : matplotlib.Axes, optional
         Axes upon which to plot.
 
+
     Returns
     -------
     ax : matplotlib.Axes
@@ -744,7 +741,7 @@ def plot_cumulative_returns(factor_returns, period, title=None, ax=None):
 
     factor_returns.plot(ax=ax, lw=3, color='forestgreen', alpha=0.6)
     ax.set(ylabel='Cumulative Returns',
-           title=("Portfolio Cumulative Return ({} Fwd Period)".format(period)
+           title=("Portfolio Cumulative Return ({}前向周期)".format(period)
                   if title is None else title),
            xlabel='')
     ax.axhline(1.0, linestyle='-', color='black', lw=1)
