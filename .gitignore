@@ -27,3 +27,4 @@ dist
 .vscode/
 *.egg-info/
 .vs/
+alphalens/examples/alphalens_tutorial_on_quantopian.ipynb
