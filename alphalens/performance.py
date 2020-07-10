@@ -250,7 +250,9 @@ def factor_returns(factor_data,
     if by_asset:
         returns = weighted_returns
     else:
-        returns = weighted_returns.groupby(level='date').sum()
+        # By default, the sum of an empty or all-NA Series is 0.
+        # if you’d like the sum of an empty series to be NaN, pass min_count=1.
+        returns = weighted_returns.groupby(level='date').sum(min_count=1)
 
     return returns
 

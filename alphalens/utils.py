@@ -186,6 +186,11 @@ def infer_trading_calendar(factor_idx, prices_idx):
     calendar : pd.DateOffset
     """
     full_idx = factor_idx.union(prices_idx)
+    # 🆗 限定在 factor_idx 范围内?
+    # all_miss = prices_idx.difference(factor_idx).normalize()
+    # f_min, f_max = factor_idx.max(), factor_idx.max()
+    # miss_idx = [i for i in all_miss if f_min < i < f_max]
+    miss_idx = prices_idx.difference(factor_idx).normalize()
 
     traded_weekdays = []
     holidays = []
@@ -208,7 +213,8 @@ def infer_trading_calendar(factor_idx, prices_idx):
         _holidays = all_weekdays.difference(used_weekdays)
         _holidays = [timestamp.date() for timestamp in _holidays]
         holidays.extend(_holidays)
-
+    # 🆗 factor 缺失日期也应等同 holidays，否则 freq 会不一致
+    holidays.extend(miss_idx)
     traded_weekdays = ' '.join(traded_weekdays)
     return CustomBusinessDay(weekmask=traded_weekdays, holidays=holidays)
 
@@ -258,7 +264,6 @@ def compute_forward_returns(factor,
         will be set to a trading calendar (pandas DateOffset) inferred
         from the input data (see infer_trading_calendar for more details).
     """
-
     factor_dateindex = factor.index.levels[0]
     if factor_dateindex.tz != prices.index.tz:
         raise NonMatchingTimezoneError("The timezone of 'factor' is not the "
@@ -267,7 +272,7 @@ def compute_forward_returns(factor,
                                        "tz_convert.")
 
     freq = infer_trading_calendar(factor_dateindex, prices.index)
-
+    # factor_dateindex.freq -> None
     factor_dateindex = factor_dateindex.intersection(prices.index)
 
     if len(factor_dateindex) == 0:
@@ -365,10 +370,10 @@ def backshift_returns_series(series, N):
     new_values = series.values[cutoff:]
 
     assert new_date_labels[0] == 0
-
+    # 🆗 更改此签名
     new_index = pd.MultiIndex(
         levels=[new_dates, sids],
-        labels=[new_date_labels, new_sid_labels],
+        codes=[new_date_labels, new_sid_labels],
         sortorder=1,
         names=ix.names,
     )

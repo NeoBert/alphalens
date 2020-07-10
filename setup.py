@@ -10,13 +10,14 @@ if 'upload' in sys.argv:
         long_description = f.read()
 
 install_reqs = [
-    'matplotlib>=3.0.2',
+    'matplotlib>=1.4.0',
     'numpy>=1.9.1',
-    'pandas>=0.18.0',
+    'pandas>=1.0.5',
     'scipy>=0.14.0',
     'seaborn>=0.6.0',
-    'statsmodels>=0.11.0rc1',
+    'statsmodels>=0.11.1',
     'IPython>=3.2.3',
+    'empyrical>=0.5.0',
 ]
 
 extra_reqs = {
@@ -24,6 +25,7 @@ extra_reqs = {
         "nose>=1.3.7",
         "parameterized>=0.5.0",
         "tox>=2.3.1",
+        "flake8>=3.7.9",
     ],
 }
 
@@ -47,6 +49,9 @@ if __name__ == "__main__":
             'Natural Language :: English',
             'Operating System :: OS Independent',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python',
             'Topic :: Utilities',
