@@ -10,11 +10,10 @@ if 'upload' in sys.argv:
         long_description = f.read()
 
 install_reqs = [
-    'matplotlib>=1.4.0',
     'numpy>=1.9.1',
     'pandas>=1.0.5',
     'scipy>=0.14.0',
-    'seaborn>=0.6.0',
+    'plotly>=4.8.2',
     'statsmodels>=0.11.1',
     'IPython>=3.2.3',
     'empyrical>=0.5.0',
@@ -32,7 +31,7 @@ extra_reqs = {
 if __name__ == "__main__":
     setup(
         name='alphalens',
-        version='0.4.0', #versioneer.get_version(),
+        version='0.4.0',  # versioneer.get_version(),
         cmdclass=versioneer.get_cmdclass(),
         description='Performance analysis of predictive (alpha) stock factors',
         author='Quantopian Inc.',
