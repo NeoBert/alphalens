@@ -186,11 +186,7 @@ def infer_trading_calendar(factor_idx, prices_idx):
     calendar : pd.DateOffset
     """
     full_idx = factor_idx.union(prices_idx)
-    # 🆗 限定在 factor_idx 范围内?
-    # all_miss = prices_idx.difference(factor_idx).normalize()
-    # f_min, f_max = factor_idx.max(), factor_idx.max()
-    # miss_idx = [i for i in all_miss if f_min < i < f_max]
-    miss_idx = prices_idx.difference(factor_idx).normalize()
+    # miss_idx = prices_idx.difference(factor_idx).normalize()
 
     traded_weekdays = []
     holidays = []
@@ -214,7 +210,7 @@ def infer_trading_calendar(factor_idx, prices_idx):
         _holidays = [timestamp.date() for timestamp in _holidays]
         holidays.extend(_holidays)
     # 🆗 factor 缺失日期也应等同 holidays，否则 freq 会不一致
-    holidays.extend(miss_idx)
+    # holidays.extend(miss_idx)
     traded_weekdays = ' '.join(traded_weekdays)
     return CustomBusinessDay(weekmask=traded_weekdays, holidays=holidays)
 
@@ -330,6 +326,7 @@ def compute_forward_returns(factor,
         raw_values_dict[label] = np.concatenate(forward_returns.values)
 
     df = pd.DataFrame.from_dict(raw_values_dict)
+
     df.set_index(
         pd.MultiIndex.from_product(
             [factor_dateindex, prices.columns],
@@ -337,8 +334,8 @@ def compute_forward_returns(factor,
         ),
         inplace=True
     )
-    df = df.reindex(factor.index)
 
+    df = df.reindex(factor.index)
     # now set the columns correctly
     df = df[column_list]
 

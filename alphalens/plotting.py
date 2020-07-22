@@ -126,7 +126,6 @@ def plot_quantile_returns_bar(mean_ret_by_q,
     else:
         ymin = None
         ymax = None
-
     if by_group:
         group_keys = sorted(
             mean_ret_by_q.index.get_level_values('group').unique())
@@ -138,34 +137,34 @@ def plot_quantile_returns_bar(mean_ret_by_q,
             subplot_titles = group_keys[i*2:(i+1)*2]
             # 如实际只有一列，也设定为2
             gf = make_subplots(rows=1, cols=2,
-                               x_title='周期频率',
                                y_title='收益率(基点)',
                                subplot_titles=subplot_titles,
                                shared_yaxes=True)
-            for col, sc in enumerate(subplot_titles, 1):
+            for j, sc in enumerate(subplot_titles, 1):
                 cor = grouped.get_group(sc)
                 bar_data = cor.xs(sc, level='group').multiply(DECIMAL_TO_BPS)
-                x = bar_data.columns
-                for index, data in bar_data.iterrows():
+                columns = bar_data.columns
+                for name in columns:
                     gf.add_trace(
-                        go.Bar(name=index, x=x, y=data.values,
-                               showlegend=True if col == 1 else False),
-                        row=1, col=col)
+                        go.Bar(name=name,
+                               legendgroup=sc,
+                               x=bar_data.index, y=bar_data[name].values),
+                        row=1, col=j)
             gf.update_layout(barmode='group')
             gf.update_yaxes(range=[ymin, ymax])
             gf.show()
     else:
-        gf = make_subplots(rows=1, cols=1, x_title='周期频率', y_title='收益率(基点)')
+        # gf = make_subplots(x_title='周期频率', y_title='收益率(基点)')
         bar_data = mean_ret_by_q.multiply(DECIMAL_TO_BPS)
-        x = bar_data.columns
-        for index, data in bar_data.iterrows():
-            gf.add_trace(
-                go.Bar(name=index, x=x, y=data.values)
-            )
-        gf.update_layout(
+        columns = bar_data.columns
+        bar_data.reset_index(inplace=True)
+
+        fig = px.bar(bar_data, x='factor_quantile', y=columns, barmode='group')
+
+        fig.update_layout(
             title_text="因子分位数分组期间平均收益率")
-        gf.update_yaxes(range=[ymin, ymax])
-        gf.show()
+        fig.update_yaxes(range=[ymin, ymax], title_text='收益率(基点)')
+        fig.show()
 
 
 def plot_information_table(ic_data):
@@ -296,8 +295,8 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         called by either get_clean_factor_and_forward_returns or
         compute_forward_returns
     """
-    title = '''分位数分组累积收益率({} 周期预测收益率)'''.format(period)
-    gf = make_subplots(rows=1, cols=1, y_title='累积收益率(log)')
+    title = f'分位数分组累积收益率({period} 周期预测收益率)'
+    gf = make_subplots(y_title='累积收益率(log)', subplot_titles=[title])
     ret_wide = quantile_returns.unstack('factor_quantile')
 
     cum_ret = ret_wide.apply(perf.cumulative_returns)
@@ -307,6 +306,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
 
     x = cum_ret.index
+
     for col in cum_ret.columns:
         gf.add_trace(
             go.Scatter(x=x, y=cum_ret[col].values,
@@ -318,7 +318,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         go.Scatter(x=cum_ret.index, y=[1.0]*len(cum_ret), name='基准',
                    line=dict(color='black', width=1, dash='dash'))
     )
-    gf.update_layout(title_text=title)
+
     gf.update_layout(
         yaxis_type="log",
         yaxis_tickformat='.3f',
@@ -329,7 +329,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         # ),
     )
     _date_tickformat(gf)
-    gf.update_yaxes(range=[np.log(ymin), np.log(ymax)])
+    # gf.update_yaxes(range=[np.log(ymin), np.log(ymax)])
     gf.show()
 
 
@@ -356,8 +356,7 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
         title = ('顶、底分位数之差的平均收益率({} 周期预测收益率)'
                  .format(periods if periods is not None else ""))
 
-        gf = make_subplots(
-            rows=1, cols=1, y_title='分位数平均收益率之差(基点)')
+        gf = make_subplots(y_title='分位数平均收益率之差(基点)')
 
         mean_returns_spread_bps = s1 * DECIMAL_TO_BPS
 
@@ -382,47 +381,47 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
             std_err_bps = s2 * DECIMAL_TO_BPS
             upper = mean_returns_spread_bps.values + (std_err_bps * bandwidth)
             lower = mean_returns_spread_bps.values - (std_err_bps * bandwidth)
-            x0 = s1.index[0]
-            x1 = s1.index[-1]
+            x = s2.index.to_list()
+            x += x[::-1]
+            y = lower.tolist() + upper.tolist()
 
-            # 使用`shapes`完成`fill_between`
-            gf.update_layout(
-                shapes=[
-                    dict(
-                        type="rect",
-                        xref="x",
-                        yref="y",
-                        x0=x0,
-                        y0=lower,
-                        x1=x1,
-                        y1=upper,
-                        fillcolor="steelblue",
-                        opacity=0.3,
-                        layer="below",
-                        line_width=0,
-                    ),
-                ]
-            )
+            gf.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    name='spread',
+                    fill='toself',
+                    fillcolor="steelblue",
+                    opacity=0.3,
+                    line_width=0,
+                ))
+
         ylim = np.nanpercentile(abs(mean_returns_spread_bps.values), 95)
-
-        gf.add_trace(
-            go.Scatter(x=[s1.index[0], s1.index[-1]], y=[0.0]*2,
-                       name='基准', opacity=0.8,
-                       line=dict(color='black', width=1, dash='dash'))
+        gf.add_shape(
+            type="line",
+            opacity=0.8,
+            x0=s1.index[0],
+            y0=0,
+            x1=s1.index[-1],
+            y1=0,
+            line=dict(
+                color="black",
+                width=1,
+                dash="dash",
+            )
         )
         gf.update_yaxes(range=[-ylim, ylim])
         gf.update_layout(title_text=title)
         return gf
 
     if isinstance(mean_returns_spread, pd.DataFrame):
-        fig_list = [None for fig in mean_returns_spread.columns]
+        fig_list = []
 
         ymin, ymax = (None, None)
-        for (i, fig), (name, fr_column) in zip(enumerate(fig_list),
-                                               mean_returns_spread.iteritems()):
+        for name, fr_column in mean_returns_spread.iteritems():
             stdn = None if std_err is None else std_err[name]
             fig = _gen_figure(fr_column, stdn)
-            fig_list[i] = fig
+            fig_list.append(fig)
             range_ = fig.layout.yaxis.range
             if range_:
                 curr_ymin, curr_ymax = range_[0], range_[1]
@@ -529,13 +528,28 @@ def _ic_hist_fig(ic, period_num):
                              group_labels,
                              bin_size=0.1,
                              show_rug=False,
-                             #  curve_type='normal',
+                             curve_type='normal',
                              )
 
-    fig.add_trace(
-        go.Scatter(x=[ic_col.mean(skipna=True)]*2,
-                   line=dict(color='whitesmoke', width=2, dash='dash'))
-    )
+    # fig.add_trace(
+    #     go.Scatter(x=[ic_col.mean(skipna=True)]*2,
+    #                line=dict(color='whitesmoke', width=2, dash='dash'))
+    # )
+    fig.add_shape(
+        # Line Vertical
+        dict(
+            type="line",
+            yref='paper',
+            x0=ic_col.mean(skipna=True),
+            y0=0,
+            x1=ic_col.mean(skipna=True),
+            y1=1,
+            line=dict(
+                color="whitesmoke",
+                width=2,
+                dash='dash'
+            )
+        ))
     fig.update_layout(
         title_text=title,
         showlegend=False,
@@ -571,6 +585,7 @@ def plot_ic_hist(ic):
 
 
 def _ic_qq_fig(ic, period_num, theoretical_dist=stats.norm):
+    # TODO:QQ图有误
     ic_col = ic[period_num]
     if isinstance(theoretical_dist, stats.norm.__class__):
         dist_name = 'Normal'
@@ -702,11 +717,13 @@ def plot_monthly_ic_heatmap(mean_monthly_ic):
             x=[f"{str(x).zfill(2)}月" for x in ic_data.columns],
             y=[f"{str(x)[:4]}年" for x in ic_data.index.values],
             z=ic_data.values,
+            colorscale='Bluered',
         )
         # Make text size smaller
         for i in range(len(fig.layout.annotations)):
-            fig.layout.annotations[i].font.size = 9
+            fig.layout.annotations[i].font.size = 12
         fig.update_layout(title_text=title)
+        fig.update_yaxes(autorange="reversed")
         fig.show()
 
 
@@ -824,25 +841,27 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
     title: string, optional
         Custom title
     """
-
+    # TODO:累积计算有误?
     avg_cumulative_returns = avg_cumulative_returns.multiply(DECIMAL_TO_BPS)
+
+    # 分位数
     qs = sorted(avg_cumulative_returns.index.levels[0].unique())
     quantiles = len(qs)
     colors = plotly.colors.sequential.Rainbow
     palette = [colors[i % len(colors)] for i in range(quantiles)]
 
-    m_min, m_max = avg_cumulative_returns.min(), avg_cumulative_returns.max()
-
     if by_quantile:
-        grouped = avg_cumulative_returns.groupby(level='factor_quantile')
-        for i, (quantile, q_ret) in enumerate(grouped):
+        for i, (quantile, q_ret) in enumerate(avg_cumulative_returns.groupby(level='factor_quantile')):
             mean = q_ret.loc[(quantile, 'mean')]
             if i % 2 == 0:
                 j = i // 2
                 subplot_titles = [
                     f"分位数 {int(t)} 平均累积收益率" for t in qs[j*2:(j+1)*2]]
                 fig = make_subplots(
-                    rows=1, cols=2, shared_yaxes=True, subplot_titles=subplot_titles)
+                    rows=1,
+                    cols=2,
+                    # shared_yaxes=True,
+                    subplot_titles=subplot_titles)
             col = i % 2 + 1
             name = '分位数 ' + str(quantile)
             fig.add_trace(
@@ -850,7 +869,7 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
                            y=mean.values,
                            name=name,
                            line_color=palette[i],
-                           showlegend=True if col == 1 else False,
+                        #    showlegend=True if col == 1 else False,
                            mode='lines'),
                 row=1,
                 col=col,
@@ -871,10 +890,19 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
                     col=col
                 )
 
-            fig.add_trace(
-                go.Scatter(x=[0]*2, y=[m_min, m_max], name='基准',
-                           showlegend=True if col == 1 else False,
-                           line=dict(color='khaki', width=1, dash='dash')),
+            fig.add_shape(
+                type="line",
+                yref='paper',
+                name='基准',
+                x0=0,
+                y0=0,
+                x1=0,
+                y1=1,
+                line=dict(
+                    color="black",
+                    width=1,
+                    dash="dash",
+                ),
                 row=1, col=col,
             )
             if i > 0 and i % 2 == 1 or (i+1) == quantiles:
@@ -886,7 +914,9 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
                 ))
                 fig.update_xaxes(title_text='周期')
                 fig.update_yaxes(title_text='平均收益率(基点)',
-                                 tickformat='.2f', range=[m_min, m_max])
+                                 tickformat='.2f',
+                                 #  range=[m_min, m_max],
+                                 )
                 fig.show()
     else:
         fig = make_subplots(rows=1, cols=1)
@@ -913,9 +943,23 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
                                    color=palette[i],
                                    array=std))
                 )
-        fig.add_trace(
-            go.Scatter(x=[0]*2, y=[m_min, m_max], name='基准',
-                       line=dict(color='khaki', width=1, dash='dash'))
+        # fig.add_trace(
+        #     go.Scatter(x=[0]*2, y=[m_min, m_max], name='基准',
+        #                line=dict(color='khaki', width=1, dash='dash'))
+        # )
+        fig.add_shape(
+            type="line",
+            yref='paper',
+            name='基准',
+            x0=0,
+            y0=0,
+            x1=0,
+            y1=1,
+            line=dict(
+                color="black",
+                width=1,
+                dash="dash",
+            )
         )
         title = "分位数的平均累积收益率" if title is None else title
         fig.update_layout(title=title,
