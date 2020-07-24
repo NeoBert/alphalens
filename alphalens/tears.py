@@ -21,6 +21,8 @@ import pandas as pd
 from . import performance as perf
 from . import plotting, utils
 
+warnings.filterwarnings('ignore')
+
 
 def create_summary_tear_sheet(
     factor_data, long_short=True, group_neutral=False

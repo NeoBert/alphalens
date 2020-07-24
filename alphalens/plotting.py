@@ -459,7 +459,7 @@ def plot_ic_ts(ic):
     ic = ic.copy()
     ic.sort_index(inplace=True)
     num_plots = len(ic.columns)
-    fig_list = [make_subplots(rows=1, cols=1, y_title='IC', shared_xaxes=True)
+    fig_list = [make_subplots(y_title='IC', shared_xaxes=True)
                 for _ in range(num_plots)]
     ymin, ymax = (None, None)
     for fig, (period_num, ic_) in zip(fig_list, ic.iteritems()):
@@ -499,9 +499,8 @@ def plot_ic_ts(ic):
         ymax = curr_ymax if ymax is None else max(ymax, curr_ymax)
 
         fig.update_layout(title_text=title)
-        # x_loc = int(len(ic_) * 0.03)
         fig.add_annotation(
-            x=0.05,  # ic_.index[x_loc],
+            x=0.05,
             y=0.95,
             xref="paper",
             yref="paper",
@@ -522,30 +521,27 @@ def _ic_hist_fig(ic, period_num):
     title = "%s 周期信息系数" % period_num
     text = "均值 %.3f \n 标准差 %.3f" % (ic_col.mean(), ic_col.std())
     ic_col = ic_col.copy()
-    hist_data = [ic_col.replace(np.nan, 0.)]
-    group_labels = ['hist']  # name of the dataset
-    fig = ff.create_distplot(hist_data,
-                             group_labels,
-                             bin_size=0.1,
+    hist_data = ic_col.replace(np.nan, 0.)
+
+    fig = ff.create_distplot([hist_data.values],
+                             [period_num],
                              show_rug=False,
                              curve_type='normal',
+                             #  bin_size=np.arange(-1, 1, 0.25),
+                             bin_size=0.25,
                              )
 
-    # fig.add_trace(
-    #     go.Scatter(x=[ic_col.mean(skipna=True)]*2,
-    #                line=dict(color='whitesmoke', width=2, dash='dash'))
-    # )
     fig.add_shape(
         # Line Vertical
         dict(
             type="line",
             yref='paper',
-            x0=ic_col.mean(skipna=True),
+            x0=ic_col.mean(),
             y0=0,
-            x1=ic_col.mean(skipna=True),
+            x1=ic_col.mean(),
             y1=1,
             line=dict(
-                color="whitesmoke",
+                color="black",
                 width=2,
                 dash='dash'
             )
@@ -555,8 +551,8 @@ def _ic_hist_fig(ic, period_num):
         showlegend=False,
         annotations=[
             dict(
-                x=0.02,
-                y=0.92,
+                x=0.05,
+                y=0.95,
                 showarrow=False,
                 xref="paper",
                 yref="paper",
@@ -585,7 +581,7 @@ def plot_ic_hist(ic):
 
 
 def _ic_qq_fig(ic, period_num, theoretical_dist=stats.norm):
-    # TODO:QQ图有误
+
     ic_col = ic[period_num]
     if isinstance(theoretical_dist, stats.norm.__class__):
         dist_name = 'Normal'
@@ -647,6 +643,9 @@ def plot_ic_hist_qq(ic, period_num, theoretical_dist=stats.norm):
     for d in hist_fig.data:
         trace = d.update(xaxis="x1", yaxis="y1")
         fig.add_trace(trace, row=1, col=1)
+    
+    for s in hist_fig.layout.shapes:
+        fig.add_shape(s, row=1, col=1)
 
     # col 2 qq fig
     for d in qq_fig.data:
@@ -674,9 +673,10 @@ def plot_ic_hist_qq(ic, period_num, theoretical_dist=stats.norm):
             title_text=qq_layout.yaxis.title.text,
         ),
     )
+
     fig.add_annotation(
-        x=0.02,
-        y=0.92,
+        x=0.05,
+        y=0.95,
         xref="paper",
         yref="paper",
         text=hist_layout.annotations[0].text,
@@ -869,7 +869,7 @@ def plot_quantile_average_cumulative_return(avg_cumulative_returns,
                            y=mean.values,
                            name=name,
                            line_color=palette[i],
-                        #    showlegend=True if col == 1 else False,
+                           #    showlegend=True if col == 1 else False,
                            mode='lines'),
                 row=1,
                 col=col,
