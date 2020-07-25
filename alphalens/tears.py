@@ -47,7 +47,7 @@ def create_summary_tear_sheet(
         returns demeaning will occur on the group level.
     """
     # Returns Analysis
-    mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
+    mean_quant_ret, _ = perf.mean_return_by_quantile(
         factor_data,
         by_group=False,
         demeaned=long_short,
@@ -80,7 +80,7 @@ def create_summary_tear_sheet(
         factor_data, demeaned=long_short, group_adjust=group_neutral
     )
 
-    mean_ret_spread_quant, std_spread_quant = perf.compute_mean_returns_spread(
+    mean_ret_spread_quant, _ = perf.compute_mean_returns_spread(
         mean_quant_rateret_bydate,
         factor_data["factor_quantile"].max(),
         factor_data["factor_quantile"].min(),
@@ -94,12 +94,6 @@ def create_summary_tear_sheet(
 
     plotting.plot_returns_table(
         alpha_beta, mean_quant_rateret, mean_ret_spread_quant)
-
-    plotting.plot_quantile_returns_bar(
-        mean_quant_rateret,
-        by_group=False,
-        ylim_percentiles=None,
-    )
 
     # Information Analysis
     ic = perf.factor_information_coefficient(factor_data)
@@ -128,6 +122,12 @@ def create_summary_tear_sheet(
     )
 
     plotting.plot_turnover_table(autocorrelation, quantile_turnover)
+
+    plotting.plot_quantile_returns_bar(
+        mean_quant_rateret,
+        by_group=False,
+        ylim_percentiles=None,
+    )
 
 
 def create_returns_tear_sheet(
@@ -162,7 +162,7 @@ def create_returns_tear_sheet(
         factor_data, long_short, group_neutral
     )
 
-    mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
+    mean_quant_ret, _ = perf.mean_return_by_quantile(
         factor_data,
         by_group=False,
         demeaned=long_short,
@@ -485,7 +485,7 @@ def create_event_returns_tear_sheet(factor_data,
     vertical_sections = 1
     if std_bar:
         vertical_sections += ((num_quantiles - 1) // 2) + 1
-
+    
     plotting.plot_quantile_average_cumulative_return(
         avg_cumulative_returns,
         by_quantile=False,
