@@ -4,6 +4,7 @@ import plotly
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
+import statsmodels.api as sm
 from plotly.subplots import make_subplots
 from scipy import stats
 
@@ -527,9 +528,7 @@ def _ic_hist_fig(ic, period_num):
                              [period_num],
                              show_rug=False,
                              curve_type='normal',
-                             #  bin_size=np.arange(-1, 1, 0.25),
-                             bin_size=0.25,
-                             )
+                             bin_size=0.25)
 
     fig.add_shape(
         # Line Vertical
@@ -581,8 +580,7 @@ def plot_ic_hist(ic):
 
 
 def _ic_qq_fig(ic, period_num, theoretical_dist=stats.norm):
-
-    ic_col = ic[period_num]
+    data = ic[period_num]
     if isinstance(theoretical_dist, stats.norm.__class__):
         dist_name = 'Normal'
     elif isinstance(theoretical_dist, stats.t.__class__):
@@ -590,12 +588,35 @@ def _ic_qq_fig(ic, period_num, theoretical_dist=stats.norm):
     else:
         dist_name = 'Theoretical'
     title = "{} 周期信息系数 {} Q-Q分布".format(period_num, dist_name)
-    qq = stats.probplot(ic_col.values, dist=theoretical_dist, sparams=(1,))
-    x = np.array([qq[0][0][0], qq[0][0][-1]])
+    probplot = sm.ProbPlot(data.replace(np.nan, 0.).values,
+                           theoretical_dist, fit=True)
+    x = probplot.theoretical_quantiles
+    y = probplot.sample_quantiles
     fig = go.Figure()
-    fig.add_scatter(x=qq[0][0], y=qq[0][1], mode='markers')
-    fig.add_scatter(x=x, y=qq[1][1] + qq[1][0]*x,
-                    mode='lines')
+    m_min, m_max = min(min(x), min(y)), max(max(x), max(y))
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode='markers',
+        ))
+    # 红色45°对角线
+    range_ = [m_min-0.01*m_min, m_max+0.01*m_max]
+    fig.add_shape(
+        dict(
+            type="line",
+            xref='paper',
+            yref='paper',
+            x0=0,
+            y0=0,
+            x1=1,
+            y1=1,
+            line=dict(
+                color="red",
+            )
+        ))
+    fig.update_xaxes(title_text="IC", range=range_)
+    fig.update_yaxes(range=range_)
     fig.update_layout(
         title_text=title,
         showlegend=False,
@@ -636,53 +657,64 @@ def plot_ic_hist_qq(ic, period_num, theoretical_dist=stats.norm):
 
     # 子图 标题
     subplot_titles = (hist_layout.title.text, qq_layout.title.text)
-    fig = make_subplots(rows=1, cols=2, subplot_titles=subplot_titles)
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=subplot_titles,
+        horizontal_spacing=0.15)
 
-    # hist fig
-    # 添加 col 1 data
-    for d in hist_fig.data:
-        trace = d.update(xaxis="x1", yaxis="y1")
-        fig.add_trace(trace, row=1, col=1)
-    
-    for s in hist_fig.layout.shapes:
-        fig.add_shape(s, row=1, col=1)
+    # 添加柱状图
+    fig.add_traces(hist_fig.data, rows=1, cols=1)
+    # 添加图例(不得指定row、col)
+    for an in hist_layout.annotations:
+        fig.add_annotation(
+            showarrow=False,
+            text=an.text,
+            x=0.05,
+            y=0.95,
+            xref='paper',
+            yref='paper')
 
-    # col 2 qq fig
-    for d in qq_fig.data:
-        trace = d.update(xaxis="x2", yaxis="y2")
-        fig.add_trace(trace, row=1, col=2)
+    # 添加柱状图 shape
+    x1_factor = fig.layout.xaxis.domain[1]
+    for s in hist_layout.shapes:
+        x0 = s.x0 * x1_factor
+        x1 = s.x1 * x1_factor
+        s.update(dict(x0=x0, x1=x1))
+        fig.add_shape(s)
 
+    # 添加QQ图
+    fig.add_traces(qq_fig.data,rows=1,cols=2)
+    # QQ 对角线
+    m_min, m_max = qq_layout.xaxis.range[0], qq_layout.xaxis.range[1]
+    fig.add_shape(
+        dict(
+            type="line",
+            xref='paper',
+            yref='paper',
+            x0=m_min,
+            y0=m_min,
+            x1=m_max,
+            y1=m_max,
+            line=dict(
+                color="red",
+            )
+        ),
+        row=1,
+        col=2
+    )
+    # 更新坐标轴title
     fig.update_layout(
         # 不显示图例
         showlegend=False,
-        xaxis1=dict(
-            domain=[0, 0.45],
-            range=hist_layout.xaxis.range,
-            # rangemode="normal", # 默认模式
+        xaxis=dict(
             title_text=hist_layout.xaxis.title.text
         ),
         xaxis2=dict(
-            domain=[0.55, 1],
             title_text=qq_layout.xaxis.title.text,
         ),
-        yaxis1=dict(
-            anchor="x1"
-        ),
         yaxis2=dict(
-            anchor="x2",
             title_text=qq_layout.yaxis.title.text,
         ),
-    )
-
-    fig.add_annotation(
-        x=0.05,
-        y=0.95,
-        xref="paper",
-        yref="paper",
-        text=hist_layout.annotations[0].text,
-        showarrow=False,
-        align="center",
-        opacity=0.8
     )
     fig.show()
 
