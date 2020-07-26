@@ -789,7 +789,6 @@ def average_cumulative_return_by_quantile(factor_data,
                 ...     |                 ...
             ---------------------------------------------------
     """
-
     def cumulative_return_around_event(q_fact, demean_by):
         return common_start_returns(
             q_fact,

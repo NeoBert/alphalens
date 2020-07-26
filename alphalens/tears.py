@@ -344,10 +344,10 @@ def create_turnover_tear_sheet(factor_data, turnover_periods=None):
     """
 
     if turnover_periods is None:
-        # 🆗 获取Index对象即可
+        # 🆗 pandas版本升级
         input_periods = utils.get_forward_returns_columns(
             factor_data.columns, require_exact_day_multiple=True,
-        ).unique()  # .get_values()
+        ).to_numpy() #.unique()  # .get_values()
         turnover_periods = utils.timedelta_strings_to_integers(input_periods)
     else:
         turnover_periods = utils.timedelta_strings_to_integers(
