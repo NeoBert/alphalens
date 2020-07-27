@@ -598,7 +598,10 @@ def get_clean_factor(factor,
 
     merged_data = forward_returns.copy()
     merged_data['factor'] = factor_copy
-
+    if isinstance(groupby, pd.Series):
+        # 传入分组可能存在异常整数
+        groupby.loc[groupby <= -1] = -1
+        
     if groupby is not None:
         if isinstance(groupby, dict):
             diff = set(factor_copy.index.get_level_values(
