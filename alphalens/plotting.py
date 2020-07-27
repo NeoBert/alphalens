@@ -327,24 +327,13 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     cum_ret = cum_ret.loc[:, ::-1]
 
     ymin, ymax = cum_ret.min(skipna=True).min(), cum_ret.max(skipna=True).max()
-
-    # x = cum_ret.index
-
-    # for col in cum_ret.columns:
-    #     gf.add_trace(
-    #         go.Scatter(x=x, y=cum_ret[col].values,
-    #                    name=f'分位数：{col} 累积(log)',
-    #                    # 累积收益率为正 红色 否则为 forestgreen
-    #                    line=dict(color='forestgreen' if cum_ret[col].values[-1] - 1 < 0 else 'red', width=2))
-    #     )
-
-    fig = px.line(
-        cum_ret,
-        x=cum_ret.index,
-        y=cum_ret.columns,
-        labels={'x': '日期', 'y': '累积收益率(log)'}
-        # color_continuous_scale=px.colors.sequential.Bluered,
-    )
+    fig = go.Figure()
+    for col in cum_ret:
+        fig.add_trace(go.Scatter(x=cum_ret.index,
+                                 y=cum_ret[col].values,
+                                 legendgroup="分位数",
+                                 mode='lines',
+                                 name=col))
     fig.add_trace(
         go.Scatter(x=cum_ret.index, y=[1.0]*len(cum_ret), name='基准',
                    line=dict(color='black', width=1, dash='dash'))
@@ -359,8 +348,9 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
             ticktext=[f"{x:.2f}" for x in tickvals]
         ),
     )
+    fig.update_xaxes(title_text='日期')
+    fig.update_yaxes(title_text='累积收益率(log)')
     _date_tickformat(fig)
-    # fig.update_yaxes(title_text='累积收益率(log)')
     fig.update_layout(
         title_text=title,
         legend=dict(
