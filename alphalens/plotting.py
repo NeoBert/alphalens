@@ -11,7 +11,7 @@ from scipy import stats
 from . import performance as perf
 from . import utils
 
-plotly.offline.init_notebook_mode(connected=True)
+# plotly.offline.init_notebook_mode(connected=True)
 
 DECIMAL_TO_BPS = 10000
 F_DIGIT = 4
